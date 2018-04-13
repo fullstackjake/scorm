@@ -19,6 +19,7 @@ Library of things
 // Gets student id as studentid and suspendata as queryString.. Also any mastery score?
 const get = {
 	req: 'get',
+	scormTask: null,
 	lmsTarget: '*'
 };
 
@@ -44,23 +45,50 @@ class Scorm {
 		this.args = args;
 	}
 
-	checkMethod() {
+	get() {
 		if (this.args.req === 'get') {
-			console.log('It was GET!!!!');
-		} else if (this.args.req === 'send') {
-			console.log('It was SEND!!!!');
-		} else {
-			console.log('It was SCORE!!!!');
+			// Getting Values from parent IFRAME
+			const parentCommGet = getScorm => {
+				const scormTask = getScorm.scormTask,
+					lmsTarget = getScorm.lmsTarget;
+				if (scormTask == null || scormTask == false) {
+					scormTask = 'cmi.core.student_id';
+				}
+				if (
+					lmsTarget == typeof 'undefined' ||
+					lmsTarget == null ||
+					lmsTarget == ''
+				) {
+					lmsTarget = '*';
+					console.log("lmsTarget was empty. Set to '*', please fix");
+					// alert('Please contact your lms administrator!');
+				}
+
+				try {
+					parent.postMessage(
+						JSON.stringify({
+							scormFunction: 'g_objAPI',
+							scormCommand: 'LMSGetValue',
+							scormValue: scormTask
+						}),
+						lmsTarget
+					);
+				} catch (err) {
+					return console.log('**ERROR SCORM.JS ' + err);
+				}
+				return console.log('The scorm value requested was: ' + scormTask);
+			};
+			parentCommGet(this.args);
 		}
 	}
 
-	toString() {
+	send() {
 		return `I need to ${this.args.req}, Using these values: ${
 			this.args.lmsTarget
 		}`;
 	}
 
-	print() {
+	score() {
 		console.log(this.toString());
 	}
 }
